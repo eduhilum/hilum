@@ -16,7 +16,7 @@ export const Route = createRootRouteWithContext<{
         <NavigationProgress />
         <Outlet />
         <Toaster duration={5000} />
-        {import.meta.env.MODE === 'development' && (
+        {import.meta.env.MODE === 'development' && !window.location.pathname.includes('/live-viewer') && (
           <>
             <ReactQueryDevtools buttonPosition='bottom-left' />
             <TanStackRouterDevtools position='bottom-right' />

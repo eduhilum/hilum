@@ -1,3 +1,18 @@
+import { useState, useEffect } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import {
+  HelpCircle,
+  BookOpen,
+  Layers,
+  Flame,
+  Plus,
+  ArrowUpRight,
+  Stethoscope,
+  Activity,
+  CheckCircle2,
+  Video,
+} from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -6,213 +21,282 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ConfigDrawer } from '@/components/config-drawer'
+import { Badge } from '@/components/ui/badge'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { TopNav } from '@/components/layout/top-nav'
 import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { Analytics } from './components/analytics'
-import { Overview } from './components/overview'
-import { RecentSales } from './components/recent-sales'
 
 export function Dashboard() {
+  const navigate = useNavigate()
+  const [stats, setStats] = useState({
+    totalQuestions: 0,
+    totalSubjects: 0,
+    totalChapters: 0,
+    totalTopics: 0,
+    totalHighYield: 0,
+  })
+  const [recentQuestions, setRecentQuestions] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadDashboardData() {
+      setLoading(true)
+      try {
+        const [
+          { count: qCount },
+          { count: sCount },
+          { count: cCount },
+          { count: tCount },
+          { count: hyCount },
+          { data: recentQ },
+        ] = await Promise.all([
+          supabase.from('mcq_questions').select('*', { count: 'exact', head: true }),
+          supabase.from('subjects').select('*', { count: 'exact', head: true }),
+          supabase.from('chapters').select('*', { count: 'exact', head: true }),
+          supabase.from('topics').select('*', { count: 'exact', head: true }),
+          supabase.from('mcq_questions').select('*', { count: 'exact', head: true }).eq('is_high_yield', true),
+          supabase.from('mcq_questions').select('*').order('created_at', { ascending: false }).limit(5),
+        ])
+
+        setStats({
+          totalQuestions: qCount || 0,
+          totalSubjects: sCount || 0,
+          totalChapters: cCount || 0,
+          totalTopics: tCount || 0,
+          totalHighYield: hyCount || 0,
+        })
+        setRecentQuestions(recentQ || [])
+      } catch (e) {
+        console.error('Error loading dashboard stats:', e)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadDashboardData()
+  }, [])
+
   return (
     <>
-      {/* ===== Top Heading ===== */}
       <Header>
-        <TopNav links={topNav} className='me-auto' />
-        <Search />
-        <ThemeSwitch />
-        <ConfigDrawer />
-        <ProfileDropdown />
+        <div className='flex items-center gap-2'>
+          <Activity className='h-5 w-5 text-primary' />
+          <h1 className='text-lg font-semibold tracking-tight'>DocLock Medical Command Center</h1>
+        </div>
+        <div className='ms-auto flex items-center gap-2'>
+          <ThemeSwitch />
+          <ProfileDropdown />
+        </div>
       </Header>
 
-      {/* ===== Main ===== */}
       <Main>
-        <div className='mb-2 flex items-center justify-between space-y-2'>
-          <h1 className='text-2xl font-bold tracking-tight'>Dashboard</h1>
-          <div className='flex items-center space-x-2'>
-            <Button>Download</Button>
+        <div className='mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+          <div>
+            <h2 className='text-2xl font-bold tracking-tight'>Admin Overview</h2>
+            <p className='text-sm text-muted-foreground'>
+              Realtime Supabase curriculum statistics and QBank management hub.
+            </p>
+          </div>
+          <div className='flex items-center gap-2'>
+            <Button
+              variant='outline'
+              onClick={() => navigate({ to: '/subjects' })}
+              className='gap-1.5'
+            >
+              <BookOpen className='h-4 w-4' />
+              Subjects
+            </Button>
+            <Button
+              onClick={() => navigate({ to: '/questions/new' })}
+              className='gap-1.5'
+            >
+              <Plus className='h-4 w-4' />
+              New MCQ
+            </Button>
           </div>
         </div>
-        <Tabs
-          orientation='vertical'
-          defaultValue='overview'
-          className='space-y-4'
-        >
-          <div className='w-full overflow-x-auto pb-2'>
-            <TabsList>
-              <TabsTrigger value='overview'>Overview</TabsTrigger>
-              <TabsTrigger value='analytics'>Analytics</TabsTrigger>
-              <TabsTrigger value='reports' disabled>
-                Reports
-              </TabsTrigger>
-              <TabsTrigger value='notifications' disabled>
-                Notifications
-              </TabsTrigger>
-            </TabsList>
-          </div>
-          <TabsContent value='overview' className='space-y-4'>
-            <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
-              <Card>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>
-                    Total Revenue
-                  </CardTitle>
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth='2'
-                    className='h-4 w-4 text-muted-foreground'
-                  >
-                    <path d='M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' />
-                  </svg>
-                </CardHeader>
-                <CardContent>
-                  <div className='text-2xl font-bold'>$45,231.89</div>
-                  <p className='text-xs text-muted-foreground'>
-                    +20.1% from last month
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>
-                    Subscriptions
-                  </CardTitle>
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth='2'
-                    className='h-4 w-4 text-muted-foreground'
-                  >
-                    <path d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2' />
-                    <circle cx='9' cy='7' r='4' />
-                    <path d='M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75' />
-                  </svg>
-                </CardHeader>
-                <CardContent>
-                  <div className='text-2xl font-bold'>+2350</div>
-                  <p className='text-xs text-muted-foreground'>
-                    +180.1% from last month
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>Sales</CardTitle>
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth='2'
-                    className='h-4 w-4 text-muted-foreground'
-                  >
-                    <rect width='20' height='14' x='2' y='5' rx='2' />
-                    <path d='M2 10h20' />
-                  </svg>
-                </CardHeader>
-                <CardContent>
-                  <div className='text-2xl font-bold'>+12,234</div>
-                  <p className='text-xs text-muted-foreground'>
-                    +19% from last month
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                  <CardTitle className='text-sm font-medium'>
-                    Active Now
-                  </CardTitle>
-                  <svg
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth='2'
-                    className='h-4 w-4 text-muted-foreground'
-                  >
-                    <path d='M22 12h-4l-3 9L9 3l-3 9H2' />
-                  </svg>
-                </CardHeader>
-                <CardContent>
-                  <div className='text-2xl font-bold'>+573</div>
-                  <p className='text-xs text-muted-foreground'>
-                    +201 since last hour
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-            <div className='grid grid-cols-1 gap-4 lg:grid-cols-7'>
-              <Card className='col-span-1 lg:col-span-4'>
-                <CardHeader>
-                  <CardTitle>Overview</CardTitle>
-                </CardHeader>
-                <CardContent className='ps-2'>
-                  <Overview />
-                </CardContent>
-              </Card>
-              <Card className='col-span-1 lg:col-span-3'>
-                <CardHeader>
-                  <CardTitle>Recent Sales</CardTitle>
-                  <CardDescription>
-                    You made 265 sales this month.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <RecentSales />
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-          <TabsContent value='analytics' className='space-y-4'>
-            <Analytics />
-          </TabsContent>
-        </Tabs>
+
+        {/* 4 Metric Cards */}
+        <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6'>
+          <Card>
+            <CardHeader className='flex flex-row items-center justify-between pb-2'>
+              <CardTitle className='text-sm font-medium text-muted-foreground'>
+                Total QBank MCQs
+              </CardTitle>
+              <HelpCircle className='h-4 w-4 text-primary' />
+            </CardHeader>
+            <CardContent>
+              <div className='text-2xl font-bold'>{loading ? '...' : stats.totalQuestions}</div>
+              <p className='text-xs text-muted-foreground mt-1'>
+                Active in mobile student drills
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className='flex flex-row items-center justify-between pb-2'>
+              <CardTitle className='text-sm font-medium text-muted-foreground'>
+                Curriculum Subjects
+              </CardTitle>
+              <BookOpen className='h-4 w-4 text-blue-600' />
+            </CardHeader>
+            <CardContent>
+              <div className='text-2xl font-bold'>{loading ? '...' : stats.totalSubjects}</div>
+              <p className='text-xs text-muted-foreground mt-1'>
+                Clinical & Pre-Clinical specialties
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className='flex flex-row items-center justify-between pb-2'>
+              <CardTitle className='text-sm font-medium text-muted-foreground'>
+                Chapters & Topics
+              </CardTitle>
+              <Layers className='h-4 w-4 text-emerald-600' />
+            </CardHeader>
+            <CardContent>
+              <div className='text-2xl font-bold'>
+                {loading ? '...' : `${stats.totalChapters} / ${stats.totalTopics}`}
+              </div>
+              <p className='text-xs text-muted-foreground mt-1'>
+                Syllabus breakdown hierarchy
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className='flex flex-row items-center justify-between pb-2'>
+              <CardTitle className='text-sm font-medium text-muted-foreground'>
+                High-Yield Pearls
+              </CardTitle>
+              <Flame className='h-4 w-4 text-amber-500' />
+            </CardHeader>
+            <CardContent>
+              <div className='text-2xl font-bold'>{loading ? '...' : stats.totalHighYield}</div>
+              <p className='text-xs text-muted-foreground mt-1'>
+                Featured in rapid recall drills
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Action Banner & Recent Questions */}
+        <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
+          <Card className='lg:col-span-8'>
+            <CardHeader className='flex flex-row items-center justify-between'>
+              <div>
+                <CardTitle className='text-base'>Recently Published MCQs</CardTitle>
+                <CardDescription className='text-xs'>
+                  Latest questions added to the Supabase database
+                </CardDescription>
+              </div>
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={() => navigate({ to: '/questions' })}
+                className='text-xs gap-1'
+              >
+                View All <ArrowUpRight className='h-3.5 w-3.5' />
+              </Button>
+            </CardHeader>
+
+            <CardContent className='pt-0'>
+              {recentQuestions.length === 0 ? (
+                <div className='py-8 text-center text-xs text-muted-foreground'>
+                  No questions found in the database.
+                </div>
+              ) : (
+                <div className='divide-y rounded-lg border text-xs'>
+                  {recentQuestions.map((q) => (
+                    <div key={q.id} className='p-3 flex items-center justify-between hover:bg-muted/30 transition-colors'>
+                      <div className='space-y-1 flex-1 mr-4 min-w-0'>
+                        <div className='flex items-center gap-2'>
+                          <span className='font-semibold text-foreground truncate block'>{q.clinical_vignette}</span>
+                          {q.is_high_yield && (
+                            <Badge variant='secondary' className='text-[10px] gap-1 bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400 shrink-0'>
+                              <Flame className='h-3 w-3 fill-amber-500 text-amber-500' />
+                              HY
+                            </Badge>
+                          )}
+                        </div>
+                        {q.golden_pearl && (
+                          <p className='text-muted-foreground text-[11px] truncate italic'>
+                            "{q.golden_pearl}"
+                          </p>
+                        )}
+                      </div>
+                      <Badge variant='outline' className='capitalize text-[10px] shrink-0 font-medium'>
+                        {q.difficulty}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className='lg:col-span-4'>
+            <CardHeader>
+              <CardTitle className='text-base flex items-center gap-2'>
+                <Stethoscope className='h-4 w-4 text-primary' />
+                Administrative Shortcuts
+              </CardTitle>
+              <CardDescription className='text-xs'>
+                Quick management tools
+              </CardDescription>
+            </CardHeader>
+            <CardContent className='space-y-3 pt-0'>
+              <Button
+                variant='outline'
+                onClick={() => navigate({ to: '/questions/new' })}
+                className='w-full justify-start gap-2.5 h-11 text-xs'
+              >
+                <Plus className='h-4 w-4 text-primary' />
+                Author New Clinical Question
+              </Button>
+
+              <Button
+                variant='outline'
+                onClick={() => navigate({ to: '/videos/new' })}
+                className='w-full justify-start gap-2.5 h-11 text-xs'
+              >
+                <Video className='h-4 w-4 text-purple-600' />
+                Upload Medical Video Lecture
+              </Button>
+
+              <Button
+                variant='outline'
+                onClick={() => navigate({ to: '/subjects' })}
+                className='w-full justify-start gap-2.5 h-11 text-xs'
+              >
+                <BookOpen className='h-4 w-4 text-blue-600' />
+                Configure Medical Specialties
+              </Button>
+
+              <Button
+                variant='outline'
+                onClick={() => navigate({ to: '/curriculum' })}
+                className='w-full justify-start gap-2.5 h-11 text-xs'
+              >
+                <Layers className='h-4 w-4 text-emerald-600' />
+                Manage Chapters & Topics
+              </Button>
+
+              <div className='rounded-lg bg-muted/40 p-3 text-[11px] text-muted-foreground border space-y-1 mt-4'>
+                <div className='font-semibold text-foreground flex items-center gap-1.5'>
+                  <CheckCircle2 className='h-3.5 w-3.5 text-emerald-600' />
+                  Mobile App Synchronized
+                </div>
+                <p>
+                  Any updates made in this portal are immediately active for students studying on DocLock mobile Expo Go.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </Main>
     </>
   )
 }
-
-const topNav = [
-  {
-    title: 'Overview',
-    href: 'dashboard/overview',
-    isActive: true,
-    disabled: false,
-  },
-  {
-    title: 'Customers',
-    href: 'dashboard/customers',
-    isActive: false,
-    disabled: true,
-  },
-  {
-    title: 'Products',
-    href: 'dashboard/products',
-    isActive: false,
-    disabled: true,
-  },
-  {
-    title: 'Settings',
-    href: 'dashboard/settings',
-    isActive: false,
-    disabled: true,
-  },
-]
