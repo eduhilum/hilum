@@ -72,6 +72,9 @@ export interface Assessment {
   icon_name: string
   icon_bg_color: string
   icon_color: string
+  start_time?: string | null
+  end_time?: string | null
+  enrolled_count?: number
   created_at: string
 }
 

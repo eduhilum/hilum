@@ -68,7 +68,7 @@ export function UserAuthForm({
         return
       }
 
-      toast.success('Welcome back to DocLock Admin!')
+      toast.success('Welcome back to Hilum Admin!')
       const targetPath = redirectTo || '/'
       navigate({ to: targetPath, replace: true })
     } catch (err: any) {

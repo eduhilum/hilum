@@ -37,12 +37,12 @@ export const usersColumns: ColumnDef<User>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: 'username',
+    accessorKey: 'candidate_id',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Username' />
+      <DataTableColumnHeader column={column} title='ID' />
     ),
     cell: ({ row }) => (
-      <LongText className='max-w-36 ps-3'>{row.getValue('username')}</LongText>
+      <div className='w-fit ps-2 text-nowrap font-medium'>{row.getValue('candidate_id') || 'N/A'}</div>
     ),
     meta: {
       className: cn(
@@ -53,16 +53,15 @@ export const usersColumns: ColumnDef<User>[] = [
     enableHiding: false,
   },
   {
-    id: 'fullName',
+    accessorKey: 'full_name',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Name' />
     ),
     cell: ({ row }) => {
-      const { firstName, lastName } = row.original
-      const fullName = `${firstName} ${lastName}`
-      return <LongText className='max-w-36'>{fullName}</LongText>
+      const fullName = row.getValue('full_name') as string
+      return <LongText className='max-w-48'>{fullName}</LongText>
     },
-    meta: { className: 'w-36' },
+    meta: { className: 'w-48' },
   },
   {
     accessorKey: 'email',
@@ -74,11 +73,18 @@ export const usersColumns: ColumnDef<User>[] = [
     ),
   },
   {
-    accessorKey: 'phoneNumber',
+    accessorKey: 'is_pro_pass_active',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Phone Number' />
+      <DataTableColumnHeader column={column} title='Pro Pass' />
     ),
-    cell: ({ row }) => <div>{row.getValue('phoneNumber')}</div>,
+    cell: ({ row }) => {
+      const isPro = row.getValue('is_pro_pass_active') as boolean;
+      return (
+        <Badge variant={isPro ? 'default' : 'secondary'}>
+          {isPro ? 'Active' : 'Inactive'}
+        </Badge>
+      );
+    },
     enableSorting: false,
   },
   {
@@ -87,12 +93,12 @@ export const usersColumns: ColumnDef<User>[] = [
       <DataTableColumnHeader column={column} title='Status' />
     ),
     cell: ({ row }) => {
-      const { status } = row.original
-      const badgeColor = callTypes.get(status)
+      const status = row.getValue('status') as string;
+      const badgeColor = callTypes.get(status as any)
       return (
         <div className='flex space-x-2'>
           <Badge variant='outline' className={cn('capitalize', badgeColor)}>
-            {row.getValue('status')}
+            {status}
           </Badge>
         </div>
       )
@@ -109,7 +115,7 @@ export const usersColumns: ColumnDef<User>[] = [
       <DataTableColumnHeader column={column} title='Role' />
     ),
     cell: ({ row }) => {
-      const { role } = row.original
+      const role = row.getValue('role') as string;
       const userType = roles.find(({ value }) => value === role)
 
       if (!userType) {
@@ -121,7 +127,7 @@ export const usersColumns: ColumnDef<User>[] = [
           {userType.icon && (
             <userType.icon size={16} className='text-muted-foreground' />
           )}
-          <span className='text-sm capitalize'>{row.getValue('role')}</span>
+          <span className='text-sm capitalize'>{role}</span>
         </div>
       )
     },

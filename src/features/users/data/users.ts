@@ -1,20 +1,17 @@
 import { faker } from '@faker-js/faker'
+import { type User } from './schema'
 
 // Set a fixed seed for consistent data generation
 faker.seed(67890)
 
-export const users = Array.from({ length: 500 }, () => {
+export const users: User[] = Array.from({ length: 50 }, () => {
   const firstName = faker.person.firstName()
   const lastName = faker.person.lastName()
   return {
     id: faker.string.uuid(),
-    firstName,
-    lastName,
-    username: faker.internet
-      .username({ firstName, lastName })
-      .toLocaleLowerCase(),
+    candidate_id: `HLM-${faker.number.int({ min: 1000, max: 9999 })}`,
+    full_name: `${firstName} ${lastName}`,
     email: faker.internet.email({ firstName }).toLocaleLowerCase(),
-    phoneNumber: faker.phone.number({ style: 'international' }),
     status: faker.helpers.arrayElement([
       'active',
       'inactive',
@@ -22,12 +19,12 @@ export const users = Array.from({ length: 500 }, () => {
       'suspended',
     ]),
     role: faker.helpers.arrayElement([
-      'superadmin',
       'admin',
-      'cashier',
-      'manager',
+      'faculty',
+      'candidate',
     ]),
-    createdAt: faker.date.past(),
-    updatedAt: faker.date.recent(),
+    is_pro_pass_active: faker.datatype.boolean(),
+    created_at: faker.date.past().toISOString(),
+    updated_at: faker.date.recent().toISOString(),
   }
 })

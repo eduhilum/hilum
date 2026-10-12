@@ -128,3 +128,7 @@ export function useAdminAuth() {
   }
   return context
 }
+
+export function useOptionalAdminAuth() {
+  return useContext(AdminAuthContext)
+}

@@ -126,7 +126,7 @@ export function QuestionsPage() {
           <div>
             <h2 className='text-2xl font-bold tracking-tight'>Medical Question Registry</h2>
             <p className='text-sm text-muted-foreground'>
-              Author, edit, and review clinical MCQs and high-yield pearls in DocLock.
+              Author, edit, and review clinical MCQs and high-yield pearls in Hilum.
             </p>
           </div>
 
@@ -298,7 +298,7 @@ export function QuestionsPage() {
                   )}
                 </DialogTitle>
                 <DialogDescription>
-                  Preview of how this question is stored and displayed in DocLock.
+                  Preview of how this question is stored and displayed in Hilum.
                 </DialogDescription>
               </DialogHeader>
 

@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from '@tanstack/react-router'
 import { useAuthStore } from '@/stores/auth-store'
+import { useOptionalAdminAuth } from '@/context/admin-auth-context'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 
 interface SignOutDialogProps {
@@ -11,8 +12,16 @@ export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const { auth } = useAuthStore()
+  const adminAuth = useOptionalAdminAuth()
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    if (adminAuth?.signOut) {
+      try {
+        await adminAuth.signOut()
+      } catch (e) {
+        console.error('[SignOutDialog] Error signing out from Supabase:', e)
+      }
+    }
     auth.reset()
     // Preserve current location for redirect after sign-in
     const currentPath = location.href

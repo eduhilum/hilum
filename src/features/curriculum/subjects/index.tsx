@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
@@ -33,6 +34,8 @@ export function SubjectsPage() {
   const [formCategories, setFormCategories] = useState('Pre-Clinical, High-Yield')
   const [formDuration, setFormDuration] = useState(25)
   const [formIconName, setFormIconName] = useState('menu-book')
+  const [formCourseIds, setFormCourseIds] = useState<string[]>([])
+  const [availableCourses, setAvailableCourses] = useState<{ id: string, title: string }[]>([])
   const [formSaving, setFormSaving] = useState(false)
 
   const fetchSubjects = async () => {
@@ -44,12 +47,14 @@ export function SubjectsPage() {
         { data: topicsData },
         { data: questionsData },
         { data: videosData },
+        { data: coursesData },
       ] = await Promise.all([
         supabase.from('subjects').select('*').order('name', { ascending: true }),
         supabase.from('chapters').select('id, subject_id'),
         supabase.from('topics').select('id, chapter_id, duration_minutes'),
         supabase.from('mcq_questions').select('id, topic_id'),
         supabase.from('video_classes').select('id, subject_id, duration_seconds'),
+        supabase.from('courses').select('id, title').order('title'),
       ])
 
       if (subErr) {
@@ -118,6 +123,9 @@ export function SubjectsPage() {
       }))
 
       setSubjects(enhanced as Subject[])
+      if (coursesData) {
+        setAvailableCourses(coursesData)
+      }
     } catch (e: any) {
       toast.error('Error fetching subjects: ' + e.message)
     } finally {
@@ -136,16 +144,18 @@ export function SubjectsPage() {
     setFormCategories('Pre-Clinical, High-Yield')
     setFormDuration(25)
     setFormIconName('menu-book')
+    setFormCourseIds([])
     setIsDialogOpen(true)
   }
 
-  const handleOpenEditDialog = (sub: Subject) => {
+  const handleOpenEditDialog = (sub: Subject & { course_ids?: string[] }) => {
     setEditingSubject(sub)
     setFormId(sub.id)
     setFormName(sub.name)
     setFormCategories(sub.categories ? sub.categories.join(', ') : '')
     setFormDuration(sub.duration_hours || 25)
     setFormIconName(sub.icon_name || 'menu-book')
+    setFormCourseIds(sub.course_ids || [])
     setIsDialogOpen(true)
   }
 
@@ -179,6 +189,7 @@ export function SubjectsPage() {
       icon_name: formIconName.trim() || 'menu-book',
       icon_bg_color: '#e7eeff',
       icon_color: '#0059b9',
+      course_ids: formCourseIds,
     }
 
     try {
@@ -243,7 +254,7 @@ export function SubjectsPage() {
           <div>
             <h2 className='text-2xl font-bold tracking-tight'>All 19 Medical Specialties</h2>
             <p className='text-sm text-muted-foreground'>
-              Manage medical subjects, active chapter curricula, and question quotas in DocLock.
+              Manage medical subjects, active chapter curricula, and question quotas in Hilum.
             </p>
           </div>
           <Button onClick={handleOpenNewDialog} className='gap-2'>
@@ -360,7 +371,7 @@ export function SubjectsPage() {
               <DialogHeader>
                 <DialogTitle>{editingSubject ? 'Edit Subject' : 'Add New Medical Subject'}</DialogTitle>
                 <DialogDescription>
-                  Configure subject details and high-yield categories for DocLock.
+                  Configure subject details and high-yield categories for Hilum.
                 </DialogDescription>
               </DialogHeader>
 
@@ -400,6 +411,33 @@ export function SubjectsPage() {
                     value={formCategories}
                     onChange={(e) => setFormCategories(e.target.value)}
                   />
+                </div>
+
+                <div className='space-y-3'>
+                  <Label>Assigned Courses</Label>
+                  <div className='grid grid-cols-2 gap-2 border rounded-md p-3 max-h-[150px] overflow-y-auto'>
+                    {availableCourses.map((course) => (
+                      <div key={course.id} className='flex items-center space-x-2'>
+                        <Checkbox 
+                          id={`course-${course.id}`} 
+                          checked={formCourseIds.includes(course.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setFormCourseIds(prev => [...prev, course.id])
+                            } else {
+                              setFormCourseIds(prev => prev.filter(id => id !== course.id))
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor={`course-${course.id}`}
+                          className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
+                        >
+                          {course.title}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div className='grid grid-cols-2 gap-4'>

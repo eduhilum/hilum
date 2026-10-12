@@ -81,8 +81,10 @@ export function VideoUploaderPage() {
   const [chapters, setChapters] = useState<Chapter[]>([])
   const [topics, setTopics] = useState<Topic[]>([])
   const [facultyList, setFacultyList] = useState<FacultyProfile[]>([])
+  const [courses, setCourses] = useState<any[]>([])
 
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('')
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('')
   const [selectedChapterTitle, setSelectedChapterTitle] = useState<string>('')
   const [selectedTopicId, setSelectedTopicId] = useState<string>('')
   const [selectedFacultyId, setSelectedFacultyId] = useState<string>('')
@@ -118,6 +120,7 @@ export function VideoUploaderPage() {
   const [newFacultyInstitution, setNewFacultyInstitution] = useState('')
   const [newFacultyAvatar, setNewFacultyAvatar] = useState('')
   const [savingFaculty, setSavingFaculty] = useState(false)
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
 
   const [saving, setSaving] = useState(false)
   const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -141,12 +144,13 @@ export function VideoUploaderPage() {
     return pubData.publicUrl
   }
 
-  // 1. Load Initial Data (Subjects & Faculty)
+  // 1. Load Initial Data (Subjects, Faculty, Courses)
   useEffect(() => {
     const initData = async () => {
-      const [{ data: subs }, { data: facs }] = await Promise.all([
+      const [{ data: subs }, { data: facs }, { data: coursesData }] = await Promise.all([
         supabase.from('subjects').select('*').order('name', { ascending: true }),
         supabase.from('faculty_profiles').select('*').order('name', { ascending: true }),
+        supabase.from('courses').select('*').order('title', { ascending: true }),
       ])
 
       if (subs && subs.length > 0) {
@@ -157,6 +161,11 @@ export function VideoUploaderPage() {
       if (facs && facs.length > 0) {
         setFacultyList(facs as FacultyProfile[])
         setSelectedFacultyId(facs[0].id)
+      }
+      
+      if (coursesData && coursesData.length > 0) {
+        setCourses(coursesData)
+        setSelectedCourseId(coursesData[0].id)
       }
     }
 
@@ -312,6 +321,24 @@ export function VideoUploaderPage() {
     }
   }
 
+  // 6.5 Handle Faculty Avatar file upload
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsUploadingAvatar(true)
+    toast.info('Uploading faculty avatar...')
+    try {
+      const cdnUrl = await uploadFileToSupabase(file, 'thumbnails')
+      setNewFacultyAvatar(cdnUrl)
+      toast.success('Faculty avatar uploaded to Supabase Storage!')
+    } catch (err: any) {
+      toast.error('Avatar upload error: ' + err.message)
+    } finally {
+      setIsUploadingAvatar(false)
+    }
+  }
+
   // 7. Timestamps management
   const handleAddTimestamp = () => {
     setTimestamps((prev) => [
@@ -366,7 +393,7 @@ export function VideoUploaderPage() {
       const payload = {
         name: newFacultyName.trim(),
         title: newFacultyTitle.trim() || 'Professor of Medical Education',
-        institution: newFacultyInstitution.trim() || 'DocLock Medical Faculty',
+        institution: newFacultyInstitution.trim() || 'Hilum Medical Faculty',
         avatar_url:
           newFacultyAvatar.trim() ||
           'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&auto=format&fit=crop&q=80',
@@ -465,6 +492,7 @@ export function VideoUploaderPage() {
             notes_pdf_url: notesPdfUrl.trim() || null,
             notes_pdf_size: notesPdfUrl.trim() ? (notesPdfSize.trim() || 'PDF Notes') : null,
             associated_topic_id: selectedTopicId || null,
+            course_id: selectedCourseId || null,
           },
         ])
         .select()
@@ -497,7 +525,7 @@ export function VideoUploaderPage() {
         if (pErr) console.warn('Pearls save notice:', pErr.message)
       }
 
-      toast.success('Medical lecture successfully published to DocLock!')
+      toast.success('Medical lecture successfully published to Hilum!')
       navigate({ to: '/videos' })
     } catch (err: any) {
       toast.error('Failed to publish video: ' + err.message)
@@ -730,6 +758,22 @@ export function VideoUploaderPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className='space-y-4 pt-0'>
+                  <div>
+                    <Label className='text-xs font-semibold'>Target Course *</Label>
+                    <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
+                      <SelectTrigger className='mt-1 text-xs'>
+                        <SelectValue placeholder='Select Course' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {courses.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div>
                     <Label className='text-xs font-semibold'>Medical Subject / Specialty *</Label>
                     <Select value={selectedSubjectId} onValueChange={setSelectedSubjectId}>
@@ -1102,7 +1146,7 @@ export function VideoUploaderPage() {
                     Live Mobile App Preview
                   </h3>
                   <Badge variant='outline' className='text-[10px]'>
-                    DocLock App Simulator
+                    Hilum App Simulator
                   </Badge>
                 </div>
 
@@ -1119,7 +1163,7 @@ export function VideoUploaderPage() {
 
                     {/* Top Watermark */}
                     <div className='absolute top-2 left-2 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded text-[10px] font-bold text-white tracking-wider'>
-                      <Video className='h-2.5 w-2.5 text-primary' /> DOCLOCK CLINICAL
+                      <Video className='h-2.5 w-2.5 text-primary' /> HILUM CLINICAL
                     </div>
 
                     {/* Duration Badge */}
@@ -1277,10 +1321,25 @@ export function VideoUploaderPage() {
 
               <div className='space-y-1'>
                 <Label className='text-xs'>Profile Photo / Avatar URL</Label>
-                <Input
-                  value={newFacultyAvatar}
-                  onChange={(e) => setNewFacultyAvatar(e.target.value)}
-                />
+                <div className='flex items-center gap-2'>
+                  <Input
+                    value={newFacultyAvatar}
+                    onChange={(e) => setNewFacultyAvatar(e.target.value)}
+                    className='flex-1'
+                  />
+                  <div className='relative'>
+                    <Input
+                      type='file'
+                      accept='image/*'
+                      className='absolute inset-0 opacity-0 cursor-pointer w-full'
+                      onChange={handleAvatarFileChange}
+                      disabled={isUploadingAvatar}
+                    />
+                    <Button type='button' variant='outline' size='icon' disabled={isUploadingAvatar}>
+                      {isUploadingAvatar ? <UploadCloud className='h-4 w-4 animate-pulse' /> : <UploadCloud className='h-4 w-4' />}
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
 

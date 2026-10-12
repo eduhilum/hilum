@@ -82,7 +82,7 @@ export function Dashboard() {
       <Header>
         <div className='flex items-center gap-2'>
           <Activity className='h-5 w-5 text-primary' />
-          <h1 className='text-lg font-semibold tracking-tight'>DocLock Medical Command Center</h1>
+          <h1 className='text-lg font-semibold tracking-tight'>Hilum Medical Command Center</h1>
         </div>
         <div className='ms-auto flex items-center gap-2'>
           <ThemeSwitch />
@@ -290,7 +290,7 @@ export function Dashboard() {
                   Mobile App Synchronized
                 </div>
                 <p>
-                  Any updates made in this portal are immediately active for students studying on DocLock mobile Expo Go.
+                  Any updates made in this portal are immediately active for students studying on Hilum mobile Expo Go.
                 </p>
               </div>
             </CardContent>

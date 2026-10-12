@@ -1,5 +1,5 @@
 /**
- * Video Utilities for DocLock Admin & Video Authoring Studio
+ * Video Utilities for Hilum Admin & Video Authoring Studio
  * Supports YouTube ID extraction, thumbnail resolution, and HTML5 video frame extraction.
  */
 

@@ -44,6 +44,9 @@ export function QuestionEditorPage() {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('')
   const [selectedChapterId, setSelectedChapterId] = useState<string>('')
   const [selectedTopicId, setSelectedTopicId] = useState<string>('')
+  
+  const [courses, setCourses] = useState<any[]>([])
+  const [selectedCourseId, setSelectedCourseId] = useState<string>('')
 
   // Assessment Selectors
   const [questionMode, setQuestionMode] = useState<'curriculum' | 'assessment'>('curriculum')
@@ -86,6 +89,17 @@ export function QuestionEditorPage() {
         if (data && data.length > 0) {
           setAssessments(data as Assessment[])
           setSelectedAssessmentId(data[0].id)
+        }
+      })
+
+    supabase
+      .from('courses')
+      .select('id, title')
+      .order('title')
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setCourses(data)
+          setSelectedCourseId(data[0].id)
         }
       })
   }, [])
@@ -170,6 +184,7 @@ export function QuestionEditorPage() {
             is_high_yield: isHighYield,
             is_image_based: false,
             reference: reference.trim() || null,
+            course_id: selectedCourseId || null,
           },
         ])
         .select()
@@ -285,6 +300,21 @@ export function QuestionEditorPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className='pt-0'>
+                  <div className='mb-4'>
+                    <Label className='text-xs'>Target Course *</Label>
+                    <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
+                      <SelectTrigger className='mt-1 text-xs'>
+                        <SelectValue placeholder='Select Course' />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {courses.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <Tabs value={questionMode} onValueChange={(v: any) => setQuestionMode(v)} className='w-full'>
                     <TabsList className='w-full grid grid-cols-2 mb-4'>
                       <TabsTrigger value='curriculum'>QBank Curriculum</TabsTrigger>
@@ -561,7 +591,7 @@ export function QuestionEditorPage() {
                 <div className='flex items-center justify-between'>
                   <div className='flex items-center gap-1.5 text-xs font-semibold text-muted-foreground'>
                     <Smartphone className='h-4 w-4' />
-                    <span>Live DocLock Mobile App Preview</span>
+                    <span>Live Hilum Mobile App Preview</span>
                   </div>
                   <Badge variant='outline' className='text-[10px]'>
                     Synchronized

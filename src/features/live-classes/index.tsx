@@ -38,6 +38,7 @@ export function LiveClassesPage() {
   const [sessions, setSessions] = useState<LiveSession[]>([])
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [facultyList, setFacultyList] = useState<FacultyProfile[]>([])
+  const [courses, setCourses] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -46,6 +47,7 @@ export function LiveClassesPage() {
 
   // Form State
   const [formTitle, setFormTitle] = useState('')
+  const [formCourseId, setFormCourseId] = useState('')
   const [formSubjectId, setFormSubjectId] = useState('')
   const [formChapter, setFormChapter] = useState('')
   const [formFacultyId, setFormFacultyId] = useState('')
@@ -56,10 +58,11 @@ export function LiveClassesPage() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const [sessionsRes, subjectsRes, facultyRes] = await Promise.all([
+      const [sessionsRes, subjectsRes, facultyRes, coursesRes] = await Promise.all([
         supabase.from('live_sessions').select('*').order('start_time', { ascending: false }),
         supabase.from('subjects').select('*').order('name', { ascending: true }),
         supabase.from('faculty_profiles').select('*').order('name', { ascending: true }),
+        supabase.from('courses').select('id, title').order('title'),
       ])
 
       if (sessionsRes.error) throw sessionsRes.error
@@ -69,6 +72,11 @@ export function LiveClassesPage() {
       setSessions(sessionsRes.data || [])
       setSubjects(subjectsRes.data || [])
       setFacultyList(facultyRes.data || [])
+      
+      if (coursesRes.data && coursesRes.data.length > 0) {
+        setCourses(coursesRes.data)
+        setFormCourseId(coursesRes.data[0].id)
+      }
       
       if (subjectsRes.data && subjectsRes.data.length > 0) {
         setFormSubjectId(subjectsRes.data[0].id)
@@ -117,6 +125,7 @@ export function LiveClassesPage() {
         subject_id: formSubjectId,
         chapter: formChapter.trim(),
         faculty_id: formFacultyId,
+        course_id: formCourseId || null,
         status: 'scheduled',
         start_time: startTimestamp,
         duration_minutes: Number(formDuration) || 60,
@@ -324,6 +333,22 @@ export function LiveClassesPage() {
                     onChange={(e) => setFormTitle(e.target.value)}
                     required
                   />
+                </div>
+
+                <div className='grid grid-cols-2 gap-4'>
+                  <div className='space-y-2 col-span-2'>
+                    <Label>Target Course *</Label>
+                    <Select value={formCourseId} onValueChange={setFormCourseId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Course" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {courses.map(c => (
+                          <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className='grid grid-cols-2 gap-4'>

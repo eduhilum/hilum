@@ -28,10 +28,12 @@ import { Route as ClerkAuthenticatedRouteRouteImport } from './routes/clerk/_aut
 import { Route as LiveViewerRoomIDRouteImport } from './routes/live-viewer/$roomID'
 import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
+import { Route as AuthenticatedCoursesIndexRouteImport } from './routes/_authenticated/courses/index'
 import { Route as AuthenticatedCurriculumIndexRouteImport } from './routes/_authenticated/curriculum/index'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 import { Route as AuthenticatedFlashcardsIndexRouteImport } from './routes/_authenticated/flashcards/index'
 import { Route as AuthenticatedFlashcardsNewRouteImport } from './routes/_authenticated/flashcards/new'
+import { Route as AuthenticatedGrandMocksIndexRouteImport } from './routes/_authenticated/grand-mocks/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedLiveClassesIndexRouteImport } from './routes/_authenticated/live-classes/index'
 import { Route as AuthenticatedQuestionsIndexRouteImport } from './routes/_authenticated/questions/index'
@@ -145,6 +147,12 @@ const AuthenticatedChatsIndexRoute = AuthenticatedChatsIndexRouteImport.update({
   path: '/chats/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCoursesIndexRoute =
+  AuthenticatedCoursesIndexRouteImport.update({
+    id: '/courses/',
+    path: '/courses/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCurriculumIndexRoute =
   AuthenticatedCurriculumIndexRouteImport.update({
     id: '/curriculum/',
@@ -167,6 +175,12 @@ const AuthenticatedFlashcardsNewRoute =
   AuthenticatedFlashcardsNewRouteImport.update({
     id: '/flashcards/new',
     path: '/flashcards/new',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedGrandMocksIndexRoute =
+  AuthenticatedGrandMocksIndexRouteImport.update({
+    id: '/grand-mocks/',
+    path: '/grand-mocks/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedHelpCenterIndexRoute =
@@ -306,8 +320,10 @@ export interface FileRoutesByFullPath {
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/apps/': typeof AuthenticatedAppsIndexRoute
   '/chats/': typeof AuthenticatedChatsIndexRoute
+  '/courses/': typeof AuthenticatedCoursesIndexRoute
   '/curriculum/': typeof AuthenticatedCurriculumIndexRoute
   '/flashcards/': typeof AuthenticatedFlashcardsIndexRoute
+  '/grand-mocks/': typeof AuthenticatedGrandMocksIndexRoute
   '/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/live-classes/': typeof AuthenticatedLiveClassesIndexRoute
   '/questions/': typeof AuthenticatedQuestionsIndexRoute
@@ -346,8 +362,10 @@ export interface FileRoutesByTo {
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
+  '/courses': typeof AuthenticatedCoursesIndexRoute
   '/curriculum': typeof AuthenticatedCurriculumIndexRoute
   '/flashcards': typeof AuthenticatedFlashcardsIndexRoute
+  '/grand-mocks': typeof AuthenticatedGrandMocksIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/live-classes': typeof AuthenticatedLiveClassesIndexRoute
   '/questions': typeof AuthenticatedQuestionsIndexRoute
@@ -391,8 +409,10 @@ export interface FileRoutesById {
   '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
+  '/_authenticated/courses/': typeof AuthenticatedCoursesIndexRoute
   '/_authenticated/curriculum/': typeof AuthenticatedCurriculumIndexRoute
   '/_authenticated/flashcards/': typeof AuthenticatedFlashcardsIndexRoute
+  '/_authenticated/grand-mocks/': typeof AuthenticatedGrandMocksIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/live-classes/': typeof AuthenticatedLiveClassesIndexRoute
   '/_authenticated/questions/': typeof AuthenticatedQuestionsIndexRoute
@@ -434,8 +454,10 @@ export interface FileRouteTypes {
     | '/clerk/user-management'
     | '/apps/'
     | '/chats/'
+    | '/courses/'
     | '/curriculum/'
     | '/flashcards/'
+    | '/grand-mocks/'
     | '/help-center/'
     | '/live-classes/'
     | '/questions/'
@@ -474,8 +496,10 @@ export interface FileRouteTypes {
     | '/clerk/user-management'
     | '/apps'
     | '/chats'
+    | '/courses'
     | '/curriculum'
     | '/flashcards'
+    | '/grand-mocks'
     | '/help-center'
     | '/live-classes'
     | '/questions'
@@ -518,8 +542,10 @@ export interface FileRouteTypes {
     | '/clerk/_authenticated/user-management'
     | '/_authenticated/apps/'
     | '/_authenticated/chats/'
+    | '/_authenticated/courses/'
     | '/_authenticated/curriculum/'
     | '/_authenticated/flashcards/'
+    | '/_authenticated/grand-mocks/'
     | '/_authenticated/help-center/'
     | '/_authenticated/live-classes/'
     | '/_authenticated/questions/'
@@ -683,6 +709,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/courses/': {
+      id: '/_authenticated/courses/'
+      path: '/courses'
+      fullPath: '/courses/'
+      preLoaderRoute: typeof AuthenticatedCoursesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/curriculum/': {
       id: '/_authenticated/curriculum/'
       path: '/curriculum'
@@ -709,6 +742,13 @@ declare module '@tanstack/react-router' {
       path: '/flashcards/new'
       fullPath: '/flashcards/new'
       preLoaderRoute: typeof AuthenticatedFlashcardsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/grand-mocks/': {
+      id: '/_authenticated/grand-mocks/'
+      path: '/grand-mocks'
+      fullPath: '/grand-mocks/'
+      preLoaderRoute: typeof AuthenticatedGrandMocksIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/help-center/': {
@@ -879,8 +919,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVideosNewRoute: typeof AuthenticatedVideosNewRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
+  AuthenticatedCoursesIndexRoute: typeof AuthenticatedCoursesIndexRoute
   AuthenticatedCurriculumIndexRoute: typeof AuthenticatedCurriculumIndexRoute
   AuthenticatedFlashcardsIndexRoute: typeof AuthenticatedFlashcardsIndexRoute
+  AuthenticatedGrandMocksIndexRoute: typeof AuthenticatedGrandMocksIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedLiveClassesIndexRoute: typeof AuthenticatedLiveClassesIndexRoute
   AuthenticatedQuestionsIndexRoute: typeof AuthenticatedQuestionsIndexRoute
@@ -901,8 +943,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVideosNewRoute: AuthenticatedVideosNewRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
+  AuthenticatedCoursesIndexRoute: AuthenticatedCoursesIndexRoute,
   AuthenticatedCurriculumIndexRoute: AuthenticatedCurriculumIndexRoute,
   AuthenticatedFlashcardsIndexRoute: AuthenticatedFlashcardsIndexRoute,
+  AuthenticatedGrandMocksIndexRoute: AuthenticatedGrandMocksIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedLiveClassesIndexRoute: AuthenticatedLiveClassesIndexRoute,
   AuthenticatedQuestionsIndexRoute: AuthenticatedQuestionsIndexRoute,

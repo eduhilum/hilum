@@ -19,7 +19,7 @@ function ProtectedAdminLayout() {
     return (
       <div className='flex h-screen w-screen flex-col items-center justify-center gap-3 bg-background'>
         <Loader2 className='h-8 w-8 animate-spin text-primary' />
-        <p className='text-sm text-muted-foreground'>Verifying DocLock administrative credentials...</p>
+        <p className='text-sm text-muted-foreground'>Verifying Hilum administrative credentials...</p>
       </div>
     )
   }
@@ -37,7 +37,7 @@ function ProtectedAdminLayout() {
           </div>
           <h2 className='text-2xl font-bold tracking-tight'>Access Restricted</h2>
           <p className='text-sm text-muted-foreground leading-relaxed'>
-            You are currently signed in as <span className='font-semibold text-foreground'>{user.email}</span>, which does not have administrator privileges in DocLock.
+            You are currently signed in as <span className='font-semibold text-foreground'>{user.email}</span>, which does not have administrator privileges in Hilum.
           </p>
           <div className='rounded-lg bg-muted p-3 text-xs text-muted-foreground text-start'>
             To access this portal, your user profile role must be set to <code className='font-mono font-semibold text-foreground'>admin</code> in Supabase:

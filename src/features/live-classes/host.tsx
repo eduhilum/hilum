@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from '@tanstack/react-router'
 import { ZegoUIKitPrebuilt } from '@zegocloud/zego-uikit-prebuilt'
-import { ArrowLeft, Loader2, Send, Upload, LayoutTemplate, MessageSquare, PieChart, Presentation } from 'lucide-react'
+import { ArrowLeft, Loader2, Send, Upload, LayoutTemplate, MessageSquare, PieChart, Presentation, List } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase, LiveSession } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -65,7 +65,7 @@ export function LiveClassHostPage() {
 
     const roomID = session.stream_url || `room_${session.id}`
     const userID = 'admin_host_' + Math.random().toString(36).substring(7)
-    const userName = 'DocLock Administrator (Host)'
+    const userName = 'Hilum Administrator (Host)'
 
     const kitToken = ZegoUIKitPrebuilt.generateKitTokenForTest(appID, serverSecret, roomID, userID, userName)
     const zp = ZegoUIKitPrebuilt.create(kitToken)
@@ -108,12 +108,24 @@ export function LiveClassHostPage() {
       .eq('session_id', session.id)
       .order('created_at', { ascending: true })
       .limit(50)
-      .then(({ data }) => setMessages(data || []))
+      .then(({ data, error }) => {
+        if (error) console.error('[LiveAdmin] Fetch chat error:', error)
+        setMessages(data || [])
+      })
 
     // Sub to Chat inserts
     const chatChannel = supabase.channel(`live-chat-${session.id}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_chat_messages', filter: `session_id=eq.${session.id}` }, (payload) => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_chat_messages', filter: `session_id=eq.${session.id}` }, async (payload) => {
         const newMsg = payload.new as ChatMessage
+        
+        // Fetch user profile
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('full_name, role, avatar_url')
+          .eq('id', newMsg.user_id)
+          .single()
+
+        newMsg.user = profile || undefined
         setMessages(prev => [...prev, newMsg])
       })
       .subscribe()
@@ -130,9 +142,17 @@ export function LiveClassHostPage() {
       })
       .subscribe()
 
+    // Sub to Poll Votes
+    const pollVotesChannel = supabase.channel(`live-poll-votes-${session.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_poll_votes' }, () => {
+        fetchActivePoll()
+      })
+      .subscribe()
+
     return () => {
       supabase.removeChannel(chatChannel)
       supabase.removeChannel(broadcastChannel)
+      supabase.removeChannel(pollVotesChannel)
     }
   }, [session])
 
@@ -168,6 +188,90 @@ export function LiveClassHostPage() {
   const [pollQuestion, setPollQuestion] = useState('')
   const [pollOptions, setPollOptions] = useState(['', ''])
   const [isUploading, setIsUploading] = useState(false)
+  const [activePoll, setActivePoll] = useState<any>(null)
+
+  const fetchActivePoll = async () => {
+    if (!session) return
+    try {
+      const { data: poll, error } = await supabase
+        .from('live_polls')
+        .select('*, options:live_poll_options(*)')
+        .eq('session_id', session.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (poll && !error) {
+        const { data: votes } = await supabase
+          .from('live_poll_votes')
+          .select('option_id')
+          .eq('poll_id', poll.id)
+
+        const totalVotes = votes?.length || 0
+        const optionsList = (poll.options || []).sort((a: any, b: any) => (a.option_order || 0) - (b.option_order || 0))
+        
+        setActivePoll({
+          id: poll.id,
+          question: poll.question,
+          options: optionsList.map((o: any) => {
+            const votesForOption = votes?.filter(v => v.option_id === o.id).length || 0
+            return {
+              id: o.id,
+              text: o.option_text,
+              votesCount: votesForOption,
+              votesPercent: totalVotes > 0 ? Math.round((votesForOption / totalVotes) * 100) : 0
+            }
+          }),
+          totalVotes
+        })
+      } else {
+        setActivePoll(null)
+      }
+    } catch (err: any) {
+      console.error('[LiveAdmin] fetchActivePoll error:', err)
+      setActivePoll(null)
+    }
+  }
+
+  useEffect(() => {
+    fetchActivePoll()
+  }, [session])
+
+  // Milestones state
+  const [milestones, setMilestones] = useState<{id: string, title: string, time_string: string}[]>([])
+  const [newMilestoneTitle, setNewMilestoneTitle] = useState('')
+  const [newMilestoneTime, setNewMilestoneTime] = useState('')
+
+  useEffect(() => {
+    if (!session) return
+    const fetchMilestones = async () => {
+      const { data } = await supabase.from('live_session_milestones').select('*').eq('session_id', session.id).order('created_at')
+      if (data) setMilestones(data)
+    }
+    fetchMilestones()
+  }, [session])
+
+  const handleCreateMilestone = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!session || !newMilestoneTitle.trim()) return
+    
+    try {
+      const { data, error } = await supabase.from('live_session_milestones').insert({
+        session_id: session.id,
+        title: newMilestoneTitle.trim(),
+        time_string: newMilestoneTime.trim()
+      }).select().single()
+      
+      if (error) throw error
+      setMilestones(prev => [...prev, data])
+      setNewMilestoneTitle('')
+      setNewMilestoneTime('')
+      toast.success('Milestone added!')
+    } catch (err: any) {
+      toast.error('Failed to add milestone: ' + err.message)
+    }
+  }
 
   const handleUploadSlide = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -244,6 +348,7 @@ export function LiveClassHostPage() {
       toast.success('Poll published!')
       setPollQuestion('')
       setPollOptions(['', ''])
+      fetchActivePoll()
     } catch (err: any) {
       toast.error('Failed to create poll: ' + err.message)
     }
@@ -316,6 +421,9 @@ export function LiveClassHostPage() {
               <TabsTrigger value="slides" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-full gap-2">
                 <Presentation className="w-4 h-4" /> Slides
               </TabsTrigger>
+              <TabsTrigger value="milestones" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-full gap-2 px-0">
+                <List className="w-4 h-4" /> Timeline
+              </TabsTrigger>
             </TabsList>
 
             {/* CHAT TAB */}
@@ -350,6 +458,33 @@ export function LiveClassHostPage() {
 
             {/* POLLS TAB */}
             <TabsContent value="polls" className="flex-1 p-4 m-0 data-[state=inactive]:hidden overflow-y-auto">
+               
+               {activePoll && (
+                 <div className="mb-8 border rounded-lg p-4 bg-muted/30">
+                   <h3 className="text-sm font-semibold mb-1">Active Poll</h3>
+                   <p className="text-xs text-muted-foreground mb-4">{activePoll.question}</p>
+                   
+                   <div className="space-y-3">
+                     {activePoll.options.map((opt: any) => (
+                       <div key={opt.id} className="space-y-1">
+                         <div className="flex justify-between text-xs">
+                           <span>{opt.text}</span>
+                           <span className="font-semibold">{opt.votesPercent}% ({opt.votesCount})</span>
+                         </div>
+                         <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                           <div 
+                             className="h-full bg-primary transition-all" 
+                             style={{ width: `${opt.votesPercent}%` }}
+                           />
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                   <p className="text-xs text-muted-foreground mt-4 text-right">Total Votes: {activePoll.totalVotes}</p>
+                 </div>
+               )}
+
+               <h3 className="text-sm font-semibold border-b pb-2 mb-4">Create New Poll</h3>
                <form onSubmit={handleCreatePoll} className="space-y-4">
                  <div className="space-y-2">
                    <Label>Poll Question</Label>
@@ -419,6 +554,46 @@ export function LiveClassHostPage() {
                   <input type="file" accept="application/pdf,image/*" className="hidden" onChange={handleUploadSlide} disabled={isUploading} />
                 </label>
               </div>
+            </TabsContent>
+            {/* MILESTONES TAB */}
+            <TabsContent value="milestones" className="flex-1 p-4 m-0 data-[state=inactive]:hidden overflow-y-auto">
+               <form onSubmit={handleCreateMilestone} className="space-y-4 mb-6">
+                 <div className="space-y-2">
+                   <Label>Milestone Title</Label>
+                   <Input 
+                     placeholder="e.g. Q&A Session" 
+                     value={newMilestoneTitle}
+                     onChange={(e) => setNewMilestoneTitle(e.target.value)}
+                   />
+                 </div>
+                 <div className="space-y-2">
+                   <Label>Time/Duration (Optional)</Label>
+                   <Input 
+                     placeholder="e.g. 15:00 - 15:30" 
+                     value={newMilestoneTime}
+                     onChange={(e) => setNewMilestoneTime(e.target.value)}
+                   />
+                 </div>
+                 <Button type="submit" className="w-full">Add Milestone</Button>
+               </form>
+               
+               <div className="space-y-3">
+                 <h3 className="text-sm font-semibold border-b pb-2">Current Milestones</h3>
+                 {milestones.length === 0 ? (
+                   <p className="text-xs text-muted-foreground text-center py-4">No milestones added yet.</p>
+                 ) : (
+                   <div className="space-y-2">
+                     {milestones.map((m, i) => (
+                       <div key={m.id} className="flex flex-col gap-1 bg-muted/50 p-3 rounded-lg border text-sm">
+                         <span className="font-medium flex items-center justify-between">
+                           <span>{i + 1}. {m.title}</span>
+                         </span>
+                         {m.time_string && <span className="text-xs text-muted-foreground">{m.time_string}</span>}
+                       </div>
+                     ))}
+                   </div>
+                 )}
+               </div>
             </TabsContent>
           </Tabs>
         </div>

@@ -16,13 +16,13 @@ import { type SidebarData } from '../types'
 
 export const sidebarData: SidebarData = {
   user: {
-    name: 'DocLock Administrator',
-    email: 'admin@doclock.com',
+    name: 'Hilum Administrator',
+    email: 'admin@hilum.com',
     avatar: '/avatars/shadcn.jpg',
   },
   teams: [
     {
-      name: 'DocLock Medical',
+      name: 'Hilum Medical',
       logo: Stethoscope,
       plan: 'Curriculum & QBank',
     },
@@ -42,6 +42,11 @@ export const sidebarData: SidebarData = {
       title: 'Curriculum & Content',
       items: [
         {
+          title: 'Courses',
+          url: '/courses',
+          icon: Layers,
+        },
+        {
           title: 'Medical Subjects',
           url: '/subjects',
           icon: BookOpen,
@@ -56,6 +61,11 @@ export const sidebarData: SidebarData = {
           title: 'Flashcards',
           url: '/flashcards',
           icon: Layers,
+        },
+        {
+          title: 'Grand Mocks',
+          url: '/grand-mocks',
+          icon: ClipboardList,
         },
         {
           title: 'Tests & Assessments',

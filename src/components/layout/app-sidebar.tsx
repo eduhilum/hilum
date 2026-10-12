@@ -11,9 +11,25 @@ import { sidebarData } from './data/sidebar-data'
 import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
 import { TeamSwitcher } from './team-switcher'
+import { useOptionalAdminAuth } from '@/context/admin-auth-context'
 
 export function AppSidebar() {
   const { collapsible, variant } = useLayout()
+  const adminAuth = useOptionalAdminAuth()
+
+  const user = adminAuth?.user
+  const profile = adminAuth?.profile
+
+  const currentUser = {
+    name:
+      profile?.full_name?.trim() ||
+      (user?.user_metadata?.full_name as string | undefined)?.trim() ||
+      user?.email?.split('@')[0] ||
+      sidebarData.user.name,
+    email: profile?.email || user?.email || sidebarData.user.email,
+    avatar: profile?.avatar_url || sidebarData.user.avatar,
+  }
+
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
       <SidebarHeader>
@@ -29,7 +45,7 @@ export function AppSidebar() {
         ))}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={sidebarData.user} />
+        <NavUser user={currentUser} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
