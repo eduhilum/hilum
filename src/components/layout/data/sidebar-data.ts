@@ -18,13 +18,13 @@ export const sidebarData: SidebarData = {
   user: {
     name: 'Hilum Administrator',
     email: 'admin@hilum.com',
-    avatar: '/avatars/shadcn.jpg',
+    avatar: '/images/favicon.png',
   },
   teams: [
     {
-      name: 'Hilum Medical',
+      name: 'Hilum Admin Portal',
       logo: Stethoscope,
-      plan: 'Curriculum & QBank',
+      plan: 'Medical & Examination CMS',
     },
   ],
   navGroups: [

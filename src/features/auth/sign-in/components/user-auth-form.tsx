@@ -68,7 +68,7 @@ export function UserAuthForm({
         return
       }
 
-      toast.success('Welcome back to Hilum Admin!')
+      toast.success('Welcome back to Hilum Admin Portal!')
       const targetPath = redirectTo || '/'
       navigate({ to: targetPath, replace: true })
     } catch (err: any) {
